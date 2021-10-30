@@ -95,7 +95,7 @@ export default function useCandyMachine(presaleContract: Presale) {
     try {
       setIsMinting(true);
 
-			let possible = await presaleContract.checkMintPossible();
+			let possible = true; // await presaleContract.checkMintPossible();
 			// Check current wallet can mint
 			if (!possible) {
 				setIsMinting(false);
@@ -165,7 +165,7 @@ export default function useCandyMachine(presaleContract: Presale) {
     }
   };
 
-  const onMintMultiple = async (quantity: number) => {
+  const onMintMultiple = true; // async (quantity: number) => {
     try {
       setIsMinting(true);
 
