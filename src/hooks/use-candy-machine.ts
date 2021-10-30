@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import useWalletBalance from "./use-wallet-balance";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { sleep } from "../utils/utility";
+import { Presale } from "./use-pre-sale";
 
 const MINT_PRICE_SOL = Number(process.env.NEXT_MINT_PRICE_SOL)
 
@@ -26,7 +27,8 @@ const connection = new anchor.web3.Connection(rpcHost);
 
 const txTimeout = 30000;
 
-export default function useCandyMachine() {
+export default function useCandyMachine(presaleContract: Presale) {
+
   const [, setBalance] = useWalletBalance()
   const [candyMachine, setCandyMachine] = useState<CandyMachine>();
   const wallet = useWallet();
@@ -92,6 +94,14 @@ export default function useCandyMachine() {
   const onMint = async () => {
     try {
       setIsMinting(true);
+
+			let possible = await presaleContract.checkMintPossible();
+			// Check current wallet can mint
+			if (!possible) {
+				setIsMinting(false);
+				return;
+			}
+
       const anchorWallet = {
         publicKey: wallet.publicKey,
         signAllTransactions: wallet.signAllTransactions,
@@ -121,9 +131,11 @@ export default function useCandyMachine() {
         );
 
         if (!status?.err) {
-          toast.success("Congratulations! Mint succeeded! Check the 'My Arts' page :)")
+			toast.success("Congratulations! Mint succeeded!");
+
+			await presaleContract.updatePresaleContractAccount();
         } else {
-          toast.error("Mint failed! Please try again!")
+			toast.error("Mint failed! Please try again!");
         }
       }
     } catch (error: any) {
@@ -156,6 +168,14 @@ export default function useCandyMachine() {
   const onMintMultiple = async (quantity: number) => {
     try {
       setIsMinting(true);
+
+			let possible = await presaleContract.checkMintPossible();
+			// Check current wallet can mint
+			if (!possible) {
+				setIsMinting(false);
+				return;
+			}
+
       const anchorWallet = {
         publicKey: wallet.publicKey,
         signAllTransactions: wallet.signAllTransactions,

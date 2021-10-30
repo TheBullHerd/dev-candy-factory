@@ -8,15 +8,32 @@ import Header from '../components/header';
 import Footer from '../components/footer';
 import useWalletBalance from '../hooks/use-wallet-balance';
 import { shortenAddress } from '../utils/candy-machine';
+import usePreSaleContract, { Presale } from '../hooks/use-pre-sale';
 import Countdown from 'react-countdown';
 import { RecaptchaButton } from '../components/recaptcha-button';
+import { Button, CircularProgress } from "@material-ui/core";
+import styled from "styled-components";
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+
+const ConnectButton = styled(WalletMultiButton)``;
+
+const CounterText = styled.span``; // add your styles here
+
+const MintContainer = styled.div``; // add your styles here
+
+const MintButton = styled(Button)``; // add your styles here
 
 const Home = () => {
   const [balance] = useWalletBalance()
   const [isActive, setIsActive] = useState(false);
   const wallet = useWallet();
 
-  const { isSoldOut, mintStartDate, isMinting, onMint, onMintMultiple, nftsData } = useCandyMachine()
+  const presaleContract: Presale = usePreSaleContract();
+  const candyMachine = useCandyMachine(presaleContract);
+
+  // Minting status to all mint buttons
+  const { isSoldOut, mintStartDate, isMinting, onMint, onMintMultiple, nftsData } = candyMachine;
+
 
   return (
     <main className="p-5">
@@ -27,24 +44,8 @@ const Home = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <Header />
-
-      <div className="flex flex-col justify-center items-center flex-1 space-y-3 mt-20">
-        <img
-          className="rounded-md shadow-lg"
-          src={`/candy.jpeg`}
-          height={200}
-          width={200}
-          alt="Candy Image" />
-
-        <span className="text-gray-800 font-bold text-2xl cursor-default">
-          THIS IS THE BEST CANDY MACHINE EVER
-        </span>
-
-        {!wallet.connected && <span
-          className="text-gray-800 font-bold text-2xl cursor-default">
-          NOT CONNECTED, PLEASE CLICK SELECT WALLET...
-        </span>}
+      <MintContainer>
+        <ConnectButton />
 
         {wallet.connected &&
           <p className="text-gray-800 font-bold text-lg cursor-default">Address: {shortenAddress(wallet.publicKey?.toBase58() || "")}</p>
@@ -56,50 +57,53 @@ const Home = () => {
             <p className="text-gray-800 font-bold text-lg cursor-default">Available/Minted/Total: {nftsData.itemsRemaining}/{nftsData.itemsRedeemed}/{nftsData.itemsAvailable}</p>
           </>
         }
-
-        <div className="flex flex-col justify-start items-start">
-          {wallet.connected &&
-            <RecaptchaButton
-              actionName="mint"
-              disabled={isSoldOut || isMinting || !isActive}
-              onClick={onMint}
-            >
-              {isSoldOut ? (
-                "SOLD OUT"
-              ) : isActive ?
-                <span>MINT {isMinting && 'LOADING...'}</span> :
-                <Countdown
-                  date={mintStartDate}
-                  onMount={({ completed }) => completed && setIsActive(true)}
-                  onComplete={() => setIsActive(true)}
-                  renderer={renderCounter}
-                />
-              }
-            </RecaptchaButton>
-          }
-
-          {wallet.connected &&
-            <RecaptchaButton
-              actionName="mint5"
-              disabled={isSoldOut || isMinting || !isActive}
-              onClick={() => onMintMultiple(5)}
-            >
-              {isSoldOut ? (
-                "SOLD OUT"
-              ) : isActive ?
-                <span>MINT 5 {isMinting && 'LOADING...'}</span> :
-                <Countdown
-                  date={mintStartDate}
-                  onMount={({ completed }) => completed && setIsActive(true)}
-                  onComplete={() => setIsActive(true)}
-                  renderer={renderCounter}
-                />
-              }
-            </RecaptchaButton>
-          }
-        </div>
-        <Footer />
-      </div>
+        {wallet.connected &&
+          <MintButton
+            variant="contained"
+            disabled={isSoldOut || isMinting || !isActive}
+            onClick={onMint}
+          >
+            {isSoldOut ? (
+              "SOLD OUT"
+              ) : isActive ? (
+                isMinting ? 
+                <CircularProgress /> :
+                <span>MINT</span>
+              ) : 
+              <Countdown
+                date={mintStartDate}
+                onMount={({ completed }) => completed && setIsActive(true)}
+                onComplete={() => setIsActive(true)}
+                renderer={renderCounter}
+              />
+            }
+          </MintButton>
+        }
+        <br/>
+        <br/>
+        {wallet.connected &&
+          <MintButton
+            variant="contained"
+            disabled={isSoldOut || isMinting || !isActive}
+            onClick={() => onMintMultiple(10)}
+          >
+            {isSoldOut ? (
+              "SOLD OUT"
+              ) : isActive ? (
+                isMinting ? 
+                <CircularProgress /> :
+                <span>MINT 10</span>
+              ) : 
+              <Countdown
+                date={mintStartDate}
+                onMount={({ completed }) => completed && setIsActive(true)}
+                onComplete={() => setIsActive(true)}
+                renderer={renderCounter}
+              />
+            }
+          </MintButton>
+        }
+      </MintContainer>
     </main>
   );
 };
